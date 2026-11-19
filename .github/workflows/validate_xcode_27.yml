@@ -1,0 +1,35 @@
+name: Validate Xcode 27
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/validate_xcode_27.yml'
+      - '.github/workflows/build_trio.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Unsigned iOS Release build
+    runs-on: xcode-27
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          submodules: recursive
+
+      - name: Verify Xcode and iOS SDK
+        run: |
+          xcodebuild -version
+          sdk_version="$(xcrun --sdk iphoneos --show-sdk-version)"
+          echo "iOS SDK: $sdk_version"
+          [[ ${sdk_version%%.*} == 27 ]]
+
+      - name: Build Trio
+        run: |
+          xcodebuild -workspace Trio.xcworkspace -scheme Trio \
+            -configuration Release -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO build
